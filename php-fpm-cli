@@ -24,38 +24,59 @@
 
 usage() {
     cat <<USAGE
-Usage: $(basename $0) [-connect CONN] -r <code>
+Usage: $(basename $0) [-connect CONN] -f <code>
 
 Options:
-     -connect CONN    Passed to cgi-fcgi, default: /var/run/php5-fpm.sock
-                      examples: ip.add.re.ss:port or /path/to/php-fpm.sock
+     -connect CONN    Passed to cgi-fcgi, default: $CONN
+                      examples: ip.add.re.ss:port or /path/to/php5-fpm.sock
 
-     -r <code>        Run PHP <code> without using script tags <?..?>
+     -f <code>        Run PHP file without using script tags
+
+     -q <code>        query string for running the php file
 
 USAGE
 }
 
 main() {
-    echo "<?php $PHPCODE" > $PHPFPMCLI_FILE
-    SCRIPT_FILENAME=$PHPFPMCLI_FILE \
+    res=0
+
+    #Execute PHP
+    SCRIPT_FILENAME=$PHP_FILE_PATH \
+    QUERY_STRING=$PHP_QUERY_STRING \
     REQUEST_METHOD=GET \
-    cgi-fcgi -bind -connect "$CONN" | stripheaders
-    rm $PHPFPMCLI_FILE
+    cgi-fcgi -bind -connect "$CONN" > $TMP_OUTPUT_FILE_PATH #without dumping to file, cgi-fcgi hides "Status"
+
+    #Get successful-execution indications
+    php_exit_code=$?;
+    php_http_status=$(awk '/Status: ([0-9]{3})/{print $2}' $TMP_OUTPUT_FILE_PATH)
+    if [[ "${#php_http_status}" -eq 0 ]]; then
+      php_http_status="200"
+      echo "No status header returned, assuming 200 Success"
+    fi
+
+    if [[ "$php_exit_code" == 0 && "$php_http_status" == "200" ]]; then
+      echo "$(<$TMP_OUTPUT_FILE_PATH)"
+    else
+      echo "PHP script returned failure (status-code=$php_http_status php_exit_code=$php_exit_code)"
+      res=1
+    fi
+
+    rm $TMP_OUTPUT_FILE_PATH
+    exit $res
 }
 
-stripheaders() {
-    sed -E '1,/^.$/ d'
-}
-
-PHPFPMCLI_FILE="/tmp/php-fpm-cli.$$.php"
-CONN="/var/run/php5-fpm.sock"
-PHPCODE=""
+CONN="/run/php-fpm/www.sock"
+PHP_FILE_PATH=""
+PHP_QUERY_STRING=""
+TMP_OUTPUT_FILE_PATH="/tmp/php_fpm_cli_output.tmp"
 init() {
   until [ -z "$1" ]; do
     case "$1" in
       -connect|--connect) shift; CONN="$1"; shift; ;;
-      
-      -r) shift; PHPCODE="$1"; shift; ;;
+
+      -f) shift; PHP_FILE_PATH="$1"; shift; ;;
+
+      -q) shift; PHP_QUERY_STRING="$1"; shift; ;;
 
       help|-h|-help|--help)
         usage;
@@ -69,8 +90,8 @@ init() {
         ;;
     esac
   done
-  if [ -z "$PHPCODE" ]; then
-    echo "missing option: -r <code>";
+  if [ -z "$PHP_FILE_PATH" ]; then
+    echo "missing option: -f <code>";
     usage;
     exit 1
   fi
