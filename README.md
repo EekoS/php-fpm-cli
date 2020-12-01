@@ -2,9 +2,9 @@
 
 Running PHP-FPM, especially for website hosts using NGINX, is missing an important functionality to execute PHP scripts directly from the command-line.
 
-With this simple script, one can execute PHP scripts directly from CLI.
+With this simple script, one can execute PHP scripts directly from CLI. It is convenient to test PHP in CLI, run batch operations with PHP and for cronjobs.
 
-It is based on [Mathias Leppich's gist][1], with added support for query-string parameters and verification of not only the exit code of the script - but also http-status-code.
+This script is based on [Mathias Leppich's gist][1], with added support for loading the script from a file (instead of input code as CLI argument), query-string parameters and verification of not only the exit code of the script - but also http-status-code.
 
 ## Dependencies
 
