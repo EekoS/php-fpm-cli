@@ -6,7 +6,11 @@ With this simple script, one can execute PHP scripts directly from CLI. It is co
 
 This script is based on [Mathias Leppich's gist][1], with added support for loading the script from a file (instead of input code as CLI argument), query-string parameters and verification of not only the exit code of the script - but also http-status-code.
 
-## Dependencies
+See more details in: https://elisegev.medium.com/running-php-fpm-in-cli-e1f0f4b4f59a
+
+## Requirements
+
+### Dependencies
 
 RHEL / CentOS
 ```shell script
@@ -16,6 +20,16 @@ yum --enablerepo=epel install fcgi
 Ubuntu / Debian
 ```shell script
 apt-get install libfcgi0ldbl
+```
+
+### Setup
+
+PHP script needs to be executable and owned by an allowed user (ACL):
+```shell script
+vi /etc/php-fpm.d/www.conf
+# add your group to the comma-delimited list: listen.acl_users
+# e.g. listen.acl_users = apache,nginx,mygroup
+systemctl restart php-fpm
 ```
 
 ## Usage
