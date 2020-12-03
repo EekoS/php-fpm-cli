@@ -27,8 +27,8 @@ apt-get install libfcgi0ldbl
 PHP script needs to be executable and owned by an allowed user (ACL):
 ```shell script
 vi /etc/php-fpm.d/www.conf
-# add your group to the comma-delimited list: listen.acl_users
-# e.g. listen.acl_users = apache,nginx,mygroup
+# add your ACL user to the comma-delimited list: listen.acl_users
+# e.g. listen.acl_users = apache,nginx,myuser
 systemctl restart php-fpm
 ```
 
